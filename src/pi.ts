@@ -66,10 +66,7 @@ export type CommandSpec = {
 type BusHandler = (data: unknown) => void
 
 export interface ExtensionAPI {
-    on(
-        event: "session_start",
-        handler: (event: SessionStartEvent, ctx: ExtensionContext) => void | Promise<void>,
-    ): void
+    on(event: "session_start", handler: (event: SessionStartEvent, ctx: ExtensionContext) => void | Promise<void>): void
     on(
         event: "session_shutdown",
         handler: (event: SessionShutdownEvent, ctx: ExtensionContext) => void | Promise<void>,
@@ -78,10 +75,7 @@ export interface ExtensionAPI {
         event: "entry_appended",
         handler: (event: EntryAppendedEvent, ctx: ExtensionContext) => void | Promise<void>,
     ): void
-    on(
-        event: "turn_end",
-        handler: (event: TurnEndEvent, ctx: ExtensionContext) => void | Promise<void>,
-    ): void
+    on(event: "turn_end", handler: (event: TurnEndEvent, ctx: ExtensionContext) => void | Promise<void>): void
     /** In-process pub/sub bus (subagents:* etc.). Handler gets only data, no ctx. */
     events: { on(channel: string, handler: BusHandler): () => void; emit(channel: string, data?: unknown): void }
     /** Persist a custom session entry; emits `entry_appended` (also forwarded over RPC). */

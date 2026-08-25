@@ -3,7 +3,7 @@
 // deps above it, and each wave is a set executable at once. Agents render as a flat
 // chronological group.
 
-import type { PlanItem, PlanSnapshot } from "./wire.js"
+import type { PlanItem } from "./wire.js"
 
 /** A plan item enriched with its wave position and how many deps still block it. */
 export interface PlanRow {
@@ -49,13 +49,11 @@ function isSatisfied(item: PlanItem): boolean {
  * (wave, original index); done items sink to the end.
  */
 export function waveOrder(items: PlanItem[]): PlanRow[] {
-    const byId = new Map(items.map(i => [i.id, i]))
+    const byId = new Map(items.map((i) => [i.id, i]))
 
     // Unsatisfied, in-set deps for an item (the ones that actually block it here).
     const blockers = (item: PlanItem): PlanItem[] =>
-        item.deps
-            .map(d => byId.get(d))
-            .filter((d): d is PlanItem => !!d && d.id !== item.id && !isSatisfied(d))
+        item.deps.map((d) => byId.get(d)).filter((d): d is PlanItem => !!d && d.id !== item.id && !isSatisfied(d))
 
     const waveCache = new Map<string, number>()
     const onStack = new Set<string>()
@@ -71,7 +69,7 @@ export function waveOrder(items: PlanItem[]): PlanRow[] {
         return w
     }
 
-    const rows: PlanRow[] = items.map(item => {
+    const rows: PlanRow[] = items.map((item) => {
         const blockedCount = blockers(item).length
         const wave = waveOf(item)
         const actionable = item.kind === "plan" && !isDone(item) && wave === 0
@@ -103,9 +101,8 @@ export function sortAgents(items: PlanItem[]): PlanItem[] {
     return [...items].sort((a, b) => key(a) - key(b))
 }
 
-/** Build the rendered view from the per-source snapshot map. */
-export function buildView(sources: Map<string, PlanSnapshot>): PlanView {
-    const planItems = sources.get("plan")?.items ?? []
-    const agentItems = sources.get("agent")?.items ?? []
+/** Build the rendered view: plans wave-ordered, agents chronological. Plans come from the
+ *  crib bus snapshot; agents from the direct subagent read (see agents.ts). */
+export function buildView(planItems: PlanItem[], agentItems: PlanItem[]): PlanView {
     return { plans: waveOrder(planItems), agents: sortAgents(agentItems) }
 }

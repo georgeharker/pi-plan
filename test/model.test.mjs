@@ -41,7 +41,8 @@ const EXPECT = {
     "plan:H": { wave: 0, blockedCount: 0, actionable: true }, // note never blocks
 }
 
-const mapOf = rows => new Map(rows.map(r => [r.item.id, { wave: r.wave, blockedCount: r.blockedCount, actionable: r.actionable }]))
+const mapOf = (rows) =>
+    new Map(rows.map((r) => [r.item.id, { wave: r.wave, blockedCount: r.blockedCount, actionable: r.actionable }]))
 
 function shuffle(a, rng) {
     const b = a.slice()
@@ -61,7 +62,7 @@ function mulberry32(seed) {
         return ((t ^ (t >>> 14)) >>> 0) / 4294967296
     }
 }
-const permuteDeps = items => items.map(x => ({ ...x, deps: x.deps.slice().reverse() }))
+const permuteDeps = (items) => items.map((x) => ({ ...x, deps: x.deps.slice().reverse() }))
 
 test("reference graph: wave / blockedCount / actionable are exactly right", () => {
     const got = mapOf(waveOrder(base()))
@@ -83,11 +84,11 @@ test("permuting item order AND deps order is invariant for wave/blocked/actionab
 })
 
 test("stable id tiebreak → the FULL ordered sequence is identical across every permutation", () => {
-    const referenceSeq = waveOrder(base()).map(r => r.item.id)
+    const referenceSeq = waveOrder(base()).map((r) => r.item.id)
     const rng = mulberry32(777)
     for (let k = 0; k < 50; k++) {
         const items = k % 2 ? permuteDeps(shuffle(base(), rng)) : shuffle(base(), rng)
-        const seq = waveOrder(items).map(r => r.item.id)
+        const seq = waveOrder(items).map((r) => r.item.id)
         assert.deepEqual(seq, referenceSeq, `perm ${k}: full ordering must be identical`)
     }
 })
@@ -129,7 +130,7 @@ test("a dependency cycle terminates and keeps every node", () => {
     ]
     const rows = waveOrder(cyclic)
     assert.equal(rows.length, 3)
-    assert.deepEqual(new Set(rows.map(r => r.item.id)), new Set(["plan:A", "plan:B", "plan:C"]))
+    assert.deepEqual(new Set(rows.map((r) => r.item.id)), new Set(["plan:A", "plan:B", "plan:C"]))
 })
 
 test("dangling deps (dep id not in the set) don't block", () => {
@@ -139,25 +140,15 @@ test("dangling deps (dep id not in the set) don't block", () => {
     assert.equal(rows[0].actionable, true)
 })
 
-test("buildView: source=plan is wave-ordered, source=agent sorts by startedAt", () => {
-    const sources = new Map([
-        ["plan", { source: "plan", seq: 0, items: base() }],
-        [
-            "agent",
-            {
-                source: "agent",
-                seq: 0,
-                items: [
-                    { id: "agent:2", kind: "agent", name: "second", status: "in_progress", deps: [], meta: { startedAt: 200 } },
-                    { id: "agent:1", kind: "agent", name: "first", status: "done", deps: [], meta: { startedAt: 100 } },
-                ],
-            },
-        ],
-    ])
-    const view = buildView(sources)
+test("buildView: plans are wave-ordered, agents sort by startedAt", () => {
+    const agentItems = [
+        { id: "agent:2", kind: "agent", name: "second", status: "in_progress", deps: [], meta: { startedAt: 200 } },
+        { id: "agent:1", kind: "agent", name: "first", status: "done", deps: [], meta: { startedAt: 100 } },
+    ]
+    const view = buildView(base(), agentItems)
     assert.equal(view.plans.length, 12)
     assert.deepEqual(
-        view.agents.map(a => a.id),
+        view.agents.map((a) => a.id),
         ["agent:1", "agent:2"],
     )
 })

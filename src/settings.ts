@@ -19,6 +19,8 @@ export interface PiPlanSettings {
     showDone: boolean
     /** Include design/note context by default (else plan work only). */
     showContext: boolean
+    /** Show the subagent fleet alongside the plan. */
+    showAgents: boolean
 }
 
 const DEFAULTS: PiPlanSettings = {
@@ -26,6 +28,7 @@ const DEFAULTS: PiPlanSettings = {
     defaultState: "expanded",
     showDone: false,
     showContext: false,
+    showAgents: true,
 }
 
 /** pi's agent config dir, honoring a relocated dir via PI_CODING_AGENT_DIR
@@ -55,6 +58,7 @@ export function readSettings(path: string = getSettingsPath()): PiPlanSettings {
                 data.defaultState === "collapsed" || data.defaultState === "hidden" ? data.defaultState : "expanded",
             showDone: typeof data.showDone === "boolean" ? data.showDone : DEFAULTS.showDone,
             showContext: typeof data.showContext === "boolean" ? data.showContext : DEFAULTS.showContext,
+            showAgents: typeof data.showAgents === "boolean" ? data.showAgents : DEFAULTS.showAgents,
         }
     } catch {
         return { ...DEFAULTS }
