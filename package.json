@@ -1,6 +1,6 @@
 {
   "name": "@geohar/pi-plan",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Pi extension: a plan sidebar. Consumes `plan-item` snapshots (from the cribsheet plan source) and renders the plan — dep-ordered plans and (later) the live agent fleet — as a TUI widget.",
   "type": "module",
   "main": "dist/index.js",
