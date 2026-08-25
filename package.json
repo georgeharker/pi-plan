@@ -1,0 +1,52 @@
+{
+  "name": "@geohar/pi-plan",
+  "version": "0.1.0",
+  "description": "Pi extension: a plan sidebar. Consumes `plan-item` snapshots (from the cribsheet plan source) and renders the plan — dep-ordered plans and (later) the live agent fleet — as a TUI widget.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "pi": {
+    "extensions": [
+      "./src/index.ts"
+    ]
+  },
+  "files": [
+    "src",
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "test": "tsc && node --test",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "keywords": [
+    "pi-package",
+    "pi",
+    "pi-extension",
+    "pi-mono",
+    "pi-coding-agent",
+    "plan",
+    "cribsheet",
+    "extension"
+  ],
+  "author": "George Harker <george@georgeharker.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/georgeharker/pi-plan.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
