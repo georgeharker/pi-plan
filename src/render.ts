@@ -55,8 +55,9 @@ function renderPlanRow(row: PlanRow, theme: Theme): string {
           : item.name
     const badge = isContext(item) ? theme.fg("dim", ` [${item.kind}]`) : ""
     const blocked = row.blockedCount > 0 ? theme.fg("dim", ` ⋯${row.blockedCount}`) : ""
+    const cyc = row.circular ? theme.fg("error", " ⟲") : ""
     const taint = item.tainted ? theme.fg("warning", " ⚠") : ""
-    return `  ${marker} ${name}${badge}${blocked}${taint}`
+    return `  ${marker} ${name}${badge}${blocked}${cyc}${taint}`
 }
 
 function renderAgentItem(item: PlanItem, theme: Theme): string {
@@ -67,17 +68,19 @@ interface Counts {
     ready: number
     active: number
     blocked: number
+    circular: number
     done: number
 }
 function counts(plans: PlanRow[]): Counts {
-    const c: Counts = { ready: 0, active: 0, blocked: 0, done: 0 }
+    const c: Counts = { ready: 0, active: 0, blocked: 0, circular: 0, done: 0 }
     for (const r of plans) {
         if (r.item.status === "done") {
             c.done++
             continue
         }
         if (r.item.status === "in_progress" || r.item.status === "in-progress") c.active++
-        if (r.actionable) c.ready++
+        if (r.circular) c.circular++
+        else if (r.actionable) c.ready++
         else if (r.blockedCount > 0) c.blocked++
     }
     return c
@@ -90,6 +93,7 @@ export function summaryLine(plans: PlanRow[], agents: PlanItem[], theme: Theme):
     if (c.ready) parts.push(theme.fg("accent", `${c.ready} ready`))
     if (c.active) parts.push(theme.fg("accent", `${c.active} active`))
     if (c.blocked) parts.push(theme.fg("dim", `${c.blocked} blocked`))
+    if (c.circular) parts.push(theme.fg("error", `${c.circular} circular`))
     if (agents.length) parts.push(`${agents.length} agent${agents.length === 1 ? "" : "s"}`)
     const body = parts.length ? "  " + parts.join(theme.fg("dim", " · ")) : theme.fg("dim", "  (empty)")
     return [`${theme.fg("dim", "▸")} ${theme.bold("Plan")}${body}${theme.fg("dim", "   /plan to expand")}`]

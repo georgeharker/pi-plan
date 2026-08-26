@@ -131,6 +131,30 @@ test("a dependency cycle terminates and keeps every node", () => {
     const rows = waveOrder(cyclic)
     assert.equal(rows.length, 3)
     assert.deepEqual(new Set(rows.map((r) => r.item.id)), new Set(["plan:A", "plan:B", "plan:C"]))
+    // every cycle member is flagged circular, wave Infinity, never actionable
+    for (const r of rows) {
+        assert.equal(r.circular, true, `${r.item.id} circular`)
+        assert.equal(r.wave, Infinity, `${r.item.id} wave Infinity`)
+        assert.equal(r.actionable, false, `${r.item.id} not actionable`)
+    }
+})
+
+test("an item depending on a cycle is itself circular; acyclic siblings still schedule", () => {
+    const rows = waveOrder([
+        item("plan:A", "plan", "todo", ["plan:B"]),
+        item("plan:B", "plan", "todo", ["plan:A"]),
+        item("plan:down", "plan", "todo", ["plan:A"]), // hangs off the cycle
+        item("plan:free", "plan", "todo", []),
+    ])
+    const byId = new Map(rows.map((r) => [r.item.id, r]))
+    for (const id of ["plan:A", "plan:B", "plan:down"]) {
+        assert.equal(byId.get(id).circular, true, `${id} circular`)
+        assert.equal(byId.get(id).actionable, false, `${id} not actionable`)
+    }
+    assert.equal(byId.get("plan:free").circular, false)
+    assert.equal(byId.get("plan:free").actionable, true)
+    // circular rows sink below finite-wave rows
+    assert.ok(rows.findIndex((r) => r.item.id === "plan:free") < rows.findIndex((r) => r.circular))
 })
 
 test("dangling deps (dep id not in the set) don't block", () => {

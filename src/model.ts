@@ -12,6 +12,8 @@ export interface PlanRow {
     wave: number
     /** direct, in-set deps that are not yet satisfied. */
     blockedCount: number
+    /** part of a dependency cycle — never schedulable, `wave` is Infinity. */
+    circular: boolean
     /** a PLAN item, not done, wave 0 — the set you can actually pick up now.
      *  (design/note are context, never "actionable".) */
     actionable: boolean
@@ -43,10 +45,11 @@ function isSatisfied(item: PlanItem): boolean {
 }
 
 /**
- * Linearize plan items into waves. `wave = 0` when no in-set dep is unsatisfied;
- * otherwise `1 + max(wave of unsatisfied in-set deps)`. Cycle-guarded (a node on the
- * current DFS stack contributes 0, so a cycle can't recurse forever). Ordered by
- * (wave, original index); done items sink to the end.
+ * Linearize plan items into waves by Kahn-style layering: each pass places every item
+ * whose unsatisfied in-set deps are all already placed, so an item lands at
+ * `1 + max(wave of its blockers)`. A pass that places nothing means the leftovers form a
+ * cycle — those are flagged `circular` with `wave = Infinity`, never schedulable. Ordered
+ * by (wave, kind, id); done items sink to the end.
  */
 export function waveOrder(items: PlanItem[]): PlanRow[] {
     const byId = new Map(items.map((i) => [i.id, i]))
@@ -54,33 +57,39 @@ export function waveOrder(items: PlanItem[]): PlanRow[] {
     // Unsatisfied, in-set deps for an item (the ones that actually block it here).
     const blockers = (item: PlanItem): PlanItem[] =>
         item.deps.map((d) => byId.get(d)).filter((d): d is PlanItem => !!d && d.id !== item.id && !isSatisfied(d))
+    const blockerMap = new Map(items.map((i) => [i.id, blockers(i)]))
 
-    const waveCache = new Map<string, number>()
-    const onStack = new Set<string>()
-    const waveOf = (item: PlanItem): number => {
-        const cached = waveCache.get(item.id)
-        if (cached !== undefined) return cached
-        if (onStack.has(item.id)) return 0 // cycle: don't recurse
-        onStack.add(item.id)
-        const bl = blockers(item)
-        const w = bl.length === 0 ? 0 : 1 + Math.max(...bl.map(waveOf))
-        onStack.delete(item.id)
-        waveCache.set(item.id, w)
-        return w
+    const wave = new Map<string, number>()
+    const placed = new Set<string>()
+    let waveNum = 0
+    let remaining = items.slice()
+    while (remaining.length > 0) {
+        const ready = remaining.filter((i) => blockerMap.get(i.id)!.every((b) => placed.has(b.id)))
+        if (ready.length === 0) break // whatever is left is circular
+        for (const i of ready) {
+            wave.set(i.id, waveNum)
+            placed.add(i.id)
+        }
+        remaining = remaining.filter((i) => !placed.has(i.id))
+        waveNum++
     }
 
     const rows: PlanRow[] = items.map((item) => {
-        const blockedCount = blockers(item).length
-        const wave = waveOf(item)
-        const actionable = item.kind === "plan" && !isDone(item) && wave === 0
-        return { item, wave, blockedCount, actionable }
+        const circular = !placed.has(item.id)
+        const w = circular ? Number.POSITIVE_INFINITY : wave.get(item.id)!
+        const actionable = item.kind === "plan" && !isDone(item) && !circular && w === 0
+        return { item, wave: w, blockedCount: blockerMap.get(item.id)!.length, circular, actionable }
     })
 
     rows.sort((a, b) => {
         const ad = isDone(a.item) ? 1 : 0
         const bd = isDone(b.item) ? 1 : 0
         if (ad !== bd) return ad - bd // not-done first, done sink to the end
-        if (a.wave !== b.wave) return a.wave - b.wave
+        if (a.wave !== b.wave) {
+            if (a.wave === Number.POSITIVE_INFINITY) return 1 // circular sink below finite waves
+            if (b.wave === Number.POSITIVE_INFINITY) return -1
+            return a.wave - b.wave
+        }
         const ak = kindRank(a.item.kind)
         const bk = kindRank(b.item.kind)
         if (ak !== bk) return ak - bk // plan work before design/note context
