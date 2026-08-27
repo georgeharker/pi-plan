@@ -66,9 +66,7 @@ export default function planSidebar(pi: ExtensionAPI): void {
             (tui, theme) => ({
                 render: (width) => {
                     const w = width ?? tui.width
-                    return collapsed
-                        ? summaryLine(plans, agents, theme, w)
-                        : renderExpanded(plans, agents, theme, w)
+                    return collapsed ? summaryLine(plans, agents, theme, w) : renderExpanded(plans, agents, theme, w)
                 },
             }),
             { placement },
