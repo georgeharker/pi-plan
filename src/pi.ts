@@ -27,10 +27,12 @@ export interface TuiApi {
     width?: number
     requestRender?(): void
 }
-/** A widget component: `render()` returns the text to draw. `invalidate` is called on
- *  theme change so the factory can re-capture. (pi calls `.render()` on this object.) */
+/** A widget component: `render(width)` returns the text to draw. pi's layout calls this
+ *  with the available column width (Container.render(width) → child.render(width)); every
+ *  returned line MUST fit within it or the TUI aborts doRender. `invalidate` is called on
+ *  theme change so the factory can re-capture. */
 export interface WidgetComponent {
-    render(): string[]
+    render(width?: number): string[]
     invalidate?(): void
 }
 /** The widget factory registered via setWidget — returns a component, NOT a raw string. */

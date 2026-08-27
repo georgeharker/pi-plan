@@ -64,10 +64,12 @@ export default function planSidebar(pi: ExtensionAPI): void {
         uiCtx.setWidget(
             WIDGET_KEY,
             (tui, theme) => ({
-                render: () =>
-                    collapsed
-                        ? summaryLine(plans, agents, theme, tui.width)
-                        : renderExpanded(plans, agents, theme, tui.width),
+                render: (width) => {
+                    const w = width ?? tui.width
+                    return collapsed
+                        ? summaryLine(plans, agents, theme, w)
+                        : renderExpanded(plans, agents, theme, w)
+                },
             }),
             { placement },
         )
