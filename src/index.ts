@@ -63,8 +63,11 @@ export default function planSidebar(pi: ExtensionAPI): void {
         const collapsed = mode === "collapsed"
         uiCtx.setWidget(
             WIDGET_KEY,
-            (_tui, theme) => ({
-                render: () => (collapsed ? summaryLine(plans, agents, theme) : renderExpanded(plans, agents, theme)),
+            (tui, theme) => ({
+                render: () =>
+                    collapsed
+                        ? summaryLine(plans, agents, theme, tui.width)
+                        : renderExpanded(plans, agents, theme, tui.width),
             }),
             { placement },
         )
