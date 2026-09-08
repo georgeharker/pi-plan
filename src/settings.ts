@@ -21,6 +21,8 @@ export interface PiPlanSettings {
     showContext: boolean
     /** Show the subagent fleet alongside the plan. */
     showAgents: boolean
+    /** Plan rows rendered before the expanded view caps with a "…N more" trailer. */
+    maxRows: number
 }
 
 const DEFAULTS: PiPlanSettings = {
@@ -29,6 +31,7 @@ const DEFAULTS: PiPlanSettings = {
     showDone: false,
     showContext: false,
     showAgents: true,
+    maxRows: 18,
 }
 
 /** pi's agent config dir, honoring a relocated dir via PI_CODING_AGENT_DIR
@@ -46,6 +49,12 @@ function isObject(x: unknown): x is Record<string, unknown> {
     return !!x && typeof x === "object" && !Array.isArray(x)
 }
 
+/** A row budget is only meaningful as a positive whole number; anything else is the default. */
+function readMaxRows(value: unknown): number {
+    if (typeof value !== "number" || !Number.isFinite(value) || value < 1) return DEFAULTS.maxRows
+    return Math.floor(value)
+}
+
 /** Read settings, falling back to defaults for a missing/invalid file or absent keys. */
 export function readSettings(path: string = getSettingsPath()): PiPlanSettings {
     try {
@@ -59,6 +68,7 @@ export function readSettings(path: string = getSettingsPath()): PiPlanSettings {
             showDone: typeof data.showDone === "boolean" ? data.showDone : DEFAULTS.showDone,
             showContext: typeof data.showContext === "boolean" ? data.showContext : DEFAULTS.showContext,
             showAgents: typeof data.showAgents === "boolean" ? data.showAgents : DEFAULTS.showAgents,
+            maxRows: readMaxRows(data.maxRows),
         }
     } catch {
         return { ...DEFAULTS }

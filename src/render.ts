@@ -6,8 +6,9 @@ import type { Theme } from "./pi.js"
 import type { PlanItem } from "./wire.js"
 import type { PlanRow } from "./model.js"
 
-/** Max plan rows before the expanded view caps with a "…N more" trailer. */
-const MAX_ROWS = 18
+/** Default plan rows before the expanded view caps with a "…N more" trailer.
+ *  Overridable per-session via `/plan lines <n>` and persistently via `maxRows`. */
+export const MAX_ROWS = 18
 
 /** Fallback panel width when the TUI hasn't reported one yet. */
 const DEFAULT_WIDTH = 80
@@ -192,9 +193,15 @@ export function summaryLine(plans: PlanRow[], agents: PlanItem[], theme: Theme, 
 }
 
 /** Expanded form: marker header + wave-ordered rows (capped) + the agent group. */
-export function renderExpanded(plans: PlanRow[], agents: PlanItem[], theme: Theme, width = DEFAULT_WIDTH): string[] {
+export function renderExpanded(
+    plans: PlanRow[],
+    agents: PlanItem[],
+    theme: Theme,
+    width = DEFAULT_WIDTH,
+    maxRows = MAX_ROWS,
+): string[] {
     const lines: string[] = [`${theme.fg("dim", "▾")} ${theme.bold("Plan")}${theme.fg("dim", "   /plan to collapse")}`]
-    const shown = plans.slice(0, MAX_ROWS)
+    const shown = plans.slice(0, Math.max(1, maxRows))
     for (const row of shown) lines.push(renderPlanRow(row, theme))
     if (plans.length > shown.length) {
         lines.push(theme.fg("dim", `  … ${plans.length - shown.length} more · /plan filter`))

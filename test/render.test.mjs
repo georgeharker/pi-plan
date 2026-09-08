@@ -4,7 +4,7 @@
 // terminal. Against compiled dist/.
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { visibleWidth, truncateToWidth, renderExpanded, summaryLine } from "../dist/render.js"
+import { visibleWidth, truncateToWidth, renderExpanded, summaryLine, MAX_ROWS } from "../dist/render.js"
 
 // A theme that wraps text in real SGR codes, mirroring pi's themed primitives.
 const COLOR = { accent: 32, dim: 90, success: 92, error: 91, warning: 93 }
@@ -49,4 +49,31 @@ test("summaryLine is clamped to a narrow panel", () => {
     const rows = Array.from({ length: 5 }, (_, i) => row(`item ${i}`))
     const lines = summaryLine(rows, [], theme, 20)
     for (const l of lines) assert.ok(visibleWidth(l) <= 20, `line width ${visibleWidth(l)} > 20`)
+})
+
+test("renderExpanded caps rows at the budget and trails the remainder", () => {
+    const rows = Array.from({ length: 25 }, (_, i) => row(`task ${i}`))
+    const lines = renderExpanded(rows, [], theme, 120, 5)
+    // header + 5 rows + trailer
+    assert.equal(lines.length, 7)
+    assert.match(lines.at(-1), /… 20 more/)
+})
+
+test("renderExpanded defaults to MAX_ROWS when no budget is given", () => {
+    const rows = Array.from({ length: 25 }, (_, i) => row(`task ${i}`))
+    const lines = renderExpanded(rows, [], theme, 120)
+    assert.equal(lines.length, 1 + MAX_ROWS + 1)
+    assert.match(lines.at(-1), new RegExp(`… ${25 - MAX_ROWS} more`))
+})
+
+test("renderExpanded omits the trailer when everything fits", () => {
+    const lines = renderExpanded([row("only")], [], theme, 120, 5)
+    assert.equal(lines.length, 2)
+    assert.ok(!lines.some((l) => l.includes("more")))
+})
+
+test("a budget below one still renders a row rather than an empty panel", () => {
+    const lines = renderExpanded([row("a"), row("b")], [], theme, 120, 0)
+    assert.equal(lines.length, 3) // header + 1 row + trailer
+    assert.match(lines.at(-1), /… 1 more/)
 })

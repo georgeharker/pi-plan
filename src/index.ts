@@ -27,6 +27,7 @@ const VERBS = [
     "hide agents",
     "filter done",
     "filter context",
+    "lines",
 ]
 
 export default function planSidebar(pi: ExtensionAPI): void {
@@ -41,6 +42,7 @@ export default function planSidebar(pi: ExtensionAPI): void {
     let showDone = settings.showDone
     let showContext = settings.showContext
     let showAgents = settings.showAgents
+    let maxRows = settings.maxRows
 
     const filterPlans = (rows: PlanRow[]): PlanRow[] =>
         rows.filter((r) => (showDone || r.item.status !== "done") && (showContext || r.item.kind === "plan"))
@@ -66,7 +68,9 @@ export default function planSidebar(pi: ExtensionAPI): void {
             (tui, theme) => ({
                 render: (width) => {
                     const w = width ?? tui.width
-                    return collapsed ? summaryLine(plans, agents, theme, w) : renderExpanded(plans, agents, theme, w)
+                    return collapsed
+                        ? summaryLine(plans, agents, theme, w)
+                        : renderExpanded(plans, agents, theme, w, maxRows)
                 },
             }),
             { placement },
@@ -99,7 +103,7 @@ export default function planSidebar(pi: ExtensionAPI): void {
     // /plan — control the render-only widget.
     pi.registerCommand("plan", {
         description:
-            "Plan sidebar: toggle | expand | collapse | hide | show | agents (show agents|hide agents) | filter done|context",
+            "Plan sidebar: toggle | expand | collapse | hide | show | agents (show agents|hide agents) | filter done|context | lines <n>",
         handler: (args, ctx) => {
             captureUi(ctx)
             const a = args.trim().toLowerCase()
@@ -118,6 +122,14 @@ export default function planSidebar(pi: ExtensionAPI): void {
                     "info",
                 )
                 return
+            } else if (a.startsWith("lines")) {
+                // `lines` alone reports the budget; `lines <n>` sets it for this session.
+                const requested = Number(a.slice("lines".length).trim())
+                if (!Number.isFinite(requested) || requested < 1) {
+                    ctx.ui?.notify?.(`plan rows — ${maxRows} (usage: /plan lines <n>)`, "info")
+                    return
+                }
+                maxRows = Math.floor(requested)
             }
             render()
         },
