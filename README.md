@@ -107,6 +107,7 @@ pi widgets are render-only, so the widget is driven by a slash command:
 | `/plan show agents` / `/plan hide agents` | set the subagent group |
 | `/plan filter done` | include/exclude done items |
 | `/plan filter context` | include/exclude design/note context |
+| `/plan lines <n>` | set the expanded row budget for the session (`/plan lines` reports it) |
 
 Collapsed is a one-line summary (`▸ Plan  N ready · M blocked · K agents   /plan to
 expand`); expanded is the wave-ordered tree followed by the **Agents** group.
@@ -122,7 +123,8 @@ first run):
   "defaultState": "expanded",   // expanded | collapsed | hidden
   "showDone": false,            // include done items by default
   "showContext": false,         // include design/note context by default
-  "showAgents": true            // show the live subagent group by default
+  "showAgents": true,           // show the live subagent group by default
+  "maxRows": 18                 // row budget before the expanded view caps ("… N more")
 }
 ```
 
