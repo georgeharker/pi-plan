@@ -8,13 +8,15 @@
   "pi": {
     "extensions": [
       "./src/index.ts"
-    ]
+    ],
+    "image": "https://cdn.jsdelivr.net/npm/@geohar/pi-plan/assets/preview.png"
   },
   "files": [
     "src",
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "assets"
   ],
   "scripts": {
     "build": "tsc",
