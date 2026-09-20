@@ -9,7 +9,7 @@
     "extensions": [
       "./src/index.ts"
     ],
-    "image": "https://cdn.jsdelivr.net/npm/@geohar/pi-plan/assets/preview.png"
+    "image": "https://raw.githubusercontent.com/georgeharker/pi-plan/main/assets/preview.png"
   },
   "files": [
     "src",
