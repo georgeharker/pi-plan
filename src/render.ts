@@ -5,6 +5,7 @@
 import type { Theme } from "./pi.js"
 import type { PlanItem } from "./wire.js"
 import type { PlanRow } from "./model.js"
+import { isDeferred } from "./model.js"
 
 /** Default plan rows before the expanded view caps with a "…N more" trailer.
  *  Overridable per-session via `/plan lines <n>` and persistently via `maxRows`. */
@@ -109,6 +110,8 @@ const STATUS_ICON: Record<string, string> = {
     failed: "✗",
     active: "●",
     superseded: "⊘",
+    parked: "⏸",
+    declined: "×",
 }
 
 function icon(status: string | null): string {
@@ -126,6 +129,9 @@ function statusColor(status: string | null): string {
         case "in_progress":
         case "in-progress":
             return "accent"
+        case "parked":
+        case "declined":
+            return "dim"
         default:
             return "dim"
     }
@@ -140,7 +146,7 @@ function renderPlanRow(row: PlanRow, theme: Theme): string {
     const marker = theme.fg(statusColor(item.status), icon(item.status))
     const name = row.actionable
         ? theme.fg("accent", item.name)
-        : item.status === "done" || isContext(item)
+        : item.status === "done" || isDeferred(item) || isContext(item)
           ? theme.fg("dim", item.name)
           : item.name
     const badge = isContext(item) ? theme.fg("dim", ` [${item.kind}]`) : ""
@@ -164,7 +170,7 @@ interface Counts {
 function counts(plans: PlanRow[]): Counts {
     const c: Counts = { ready: 0, active: 0, blocked: 0, circular: 0, done: 0 }
     for (const r of plans) {
-        if (r.item.status === "done") {
+        if (r.item.status === "done" || isDeferred(r.item)) {
             c.done++
             continue
         }

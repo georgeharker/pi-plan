@@ -36,6 +36,15 @@ function isDone(item: PlanItem): boolean {
     return item.status === "done"
 }
 
+/** Deferred states (plan-deferral-review.md): parked = not now, watching a
+ *  trigger; declined = never scheduled, remembered with a why-not. Both sink
+ *  like done for rendering and are never "actionable" — but they are NOT done,
+ *  and as a DEP they still block (mirroring crib's rule: a plan dep gates
+ *  until done). */
+export function isDeferred(item: PlanItem): boolean {
+    return item.status === "parked" || item.status === "declined"
+}
+
 /** Does depending on `item` block a dependent? Mirrors crib dep semantics:
  *  note → never; design → blocks only while tainted; plan → blocks until done. */
 function isSatisfied(item: PlanItem): boolean {
@@ -77,14 +86,15 @@ export function waveOrder(items: PlanItem[]): PlanRow[] {
     const rows: PlanRow[] = items.map((item) => {
         const circular = !placed.has(item.id)
         const w = circular ? Number.POSITIVE_INFINITY : wave.get(item.id)!
-        const actionable = item.kind === "plan" && !isDone(item) && !circular && w === 0
+        const actionable =
+            item.kind === "plan" && !isDone(item) && !isDeferred(item) && !circular && w === 0
         return { item, wave: w, blockedCount: blockerMap.get(item.id)!.length, circular, actionable }
     })
 
     rows.sort((a, b) => {
-        const ad = isDone(a.item) ? 1 : 0
-        const bd = isDone(b.item) ? 1 : 0
-        if (ad !== bd) return ad - bd // not-done first, done sink to the end
+        const ad = isDone(a.item) || isDeferred(a.item) ? 1 : 0
+        const bd = isDone(b.item) || isDeferred(b.item) ? 1 : 0
+        if (ad !== bd) return ad - bd // work first; done/parked/declined sink to the end
         if (a.wave !== b.wave) {
             if (a.wave === Number.POSITIVE_INFINITY) return 1 // circular sink below finite waves
             if (b.wave === Number.POSITIVE_INFINITY) return -1
